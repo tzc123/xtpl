@@ -1,9 +1,17 @@
+const match = require('./match')
+
 class Section {
+
   constructor(tpl) {
     this.tpl = tpl
   }
+
   deal(obj) {
     let logic = match(obj.value)
+    let value = {
+      ...obj,
+      ...logic
+    }
     let current = this.current
     let parent = current.parent
     if (logic) {
@@ -11,32 +19,20 @@ class Section {
         if (!this.current.middle) {
           this.current.middle = []
         }
-        this.current.middle.push({
-          ...obj,
-          ...logic
-        })
+        this.current.middle.push(value)
       } else {
         if (logic.value) {
           if (!this.current.end) {
             if (!this.current.start) {
-              this.start({
-                ...obj,
-                ...logic
-              })
+              this.start(value)
             } else {
               this.checkout('child')
-              this.start({
-                ...obj,
-                ...logic
-              })
+              this.start(value)
             }
           }
         } else {
           if (logic.type == this.current.start.type) {
-            this.end({
-              ...obj,
-              ...logic
-            })
+            this.end(value)
             if (this.current == this.tree.root) {
               return
             }
@@ -47,12 +43,18 @@ class Section {
         } 
       }
     } else {
-      if (!current.variables) {
-        current.variables = []
-      }
-      current.variables.push(obj)
+      this.createVariable(obj)
     }
   }
+
+  createVariable(obj) {
+    let current = this.current
+    if (!current.variables) {
+      current.variables = []
+    }
+    current.variables.push(obj)
+  }
+
   checkout(type) {
     if (type == 'child') {
       let child = {
@@ -65,10 +67,12 @@ class Section {
       this.current = child
     }
   }
+
   start(start) {
     this.current.start = start
     console.log(start.type, '开始')
   }
+
   end(end) {
     this.current.end = end
     console.log(end.type, '闭合')
@@ -123,23 +127,6 @@ class Section {
   }
 }
 
-function match(str) {
-  let kw = ['for','elseif','else','if']
-  let logic
-  kw.some(item => {
-    if (str.indexOf(item) != -1) {
-      logic = {
-        type: item
-      }
-      return true
-    }
-  })
-  let res = str.match(/\((.+)\)/)
-  if (logic && res) {
-    logic.value = res[1]
-  }
-  return logic || false
-}
 module.exports = function view(tpl) {
   let section = new Section(tpl)
   return section.run()

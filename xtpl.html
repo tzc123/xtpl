@@ -8,148 +8,157 @@
 </head>
 <body>
   <script>
-    class Section {
-      constructor(tpl) {
-        this.tpl = tpl
-      }
-      deal(obj) {
-        let logic = match(obj.value)
-        let current = this.current
-        let parent = current.parent
-        if (logic) {
-          if (this.current.start && this.current.start.type == 'if' && (logic.type == 'elseif' || logic.type == 'else')) {
-            if (!this.current.middle) {
-              this.current.middle = []
-            }
-            this.current.middle.push({
-              ...obj,
-              ...logic
-            })
-          } else {
-            if (logic.value) {
-              if (!this.current.end) {
-                if (!this.current.start) {
-                  this.start({
-                    ...obj,
-                    ...logic
-                  })
-                } else {
-                  this.checkout('child')
-                  this.start({
-                    ...obj,
-                    ...logic
-                  })
-                }
-              }
-            } else {
-              if (logic.type == this.current.start.type) {
-                this.end({
-                  ...obj,
-                  ...logic
-                })
-                if (this.current == this.tree.root) {
-                  return
-                }
-                this.current = this.current.parent
-              } else {
-                throw new Error('标签未正确闭合')
-              }
-            } 
-          }
-        } else {
-          if (!current.variables) {
-            current.variables = []
-          }
-          current.variables.push(obj)
+class Section {
+  constructor(tpl) {
+    this.tpl = tpl
+  }
+  deal(obj) {
+    let logic = match(obj.value)
+    let current = this.current
+    let parent = current.parent
+    if (logic) {
+      if (this.current.start && this.current.start.type == 'if' && (logic.type == 'elseif' || logic.type == 'else')) {
+        if (!this.current.middle) {
+          this.current.middle = []
         }
-      }
-      checkout(type) {
-        if (type == 'child') {
-          let child = {
-            parent: this.current
-          }
-          if (!this.current.children) {
-            this.current.children = [] 
-          }
-          this.current.children.push(child)
-          this.current = child
-        }
-      }
-      start(start) {
-        this.current.start = start
-        console.log(start.type, '开始')
-      }
-      end(end) {
-        this.current.end = end
-        console.log(end.type, '闭合')
-      }
-      middle(middle) {
-        this.current.middle = middle
-      }
-      run() {
-        let child = {}
-        this.tree = {
-          root: {
-            start: true,
-            children: []
-          }
-        }
-        this.tree.root.children.push(child)
-        child.parent = this.tree.root
-        this.current = child
-        return this.search()
-      }
-      search() {
-        let startIndex = 0
-        let root = this.tree.root
-        while(true) {
-          let tagBegin = this.tpl.indexOf('{', startIndex)
-          let tagClose = this.tpl.indexOf('}', startIndex)
-          if (tagBegin == -1) {
-            if (tagClose == -1) {
-              if (root.children[root.children.length - 1].end) {
-                this.current.end = true
-                return this.tree
-              } else {
-                throw new Error('标签未正确闭合')
-              }
+        this.current.middle.push({
+          ...obj,
+          ...logic
+        })
+      } else {
+        if (logic.value) {
+          if (!this.current.end) {
+            if (!this.current.start) {
+              this.start({
+                ...obj,
+                ...logic
+              })
             } else {
-              throw new Error('找不到{')
-            }
-          } else {
-            if (tagClose == -1) {
-              throw new Error('找不到}')
-            } else {
-              let value = this.tpl.substring(tagBegin + 1, tagClose)
-              startIndex = tagClose + 1
-              this.deal({
-                tagBegin,
-                tagClose,
-                value
+              this.checkout('child')
+              this.start({
+                ...obj,
+                ...logic
               })
             }
           }
-        }
-      }
-    }
-
-    function match(str) {
-      let kw = ['for','elseif','else','if']
-      let logic
-      kw.some(item => {
-        if (str.indexOf(item) != -1) {
-          logic = {
-            type: item
+        } else {
+          if (logic.type == this.current.start.type) {
+            this.end({
+              ...obj,
+              ...logic
+            })
+            if (this.current == this.tree.root) {
+              return
+            }
+            this.current = this.current.parent
+          } else {
+            throw new Error('标签未正确闭合')
           }
-          return true
-        }
-      })
-      let res = str.match(/\((.+)\)/)
-      if (logic && res) {
-        logic.value = res[1]
+        } 
       }
-      return logic || false
+    } else {
+      createVariable(obj)
     }
+  }
+  merge(obj1, obj2) {
+    return {
+      ...obj1,
+      ...obj2
+    }
+  }
+  createVariable(obj) {
+    if (!current.variables) {
+      current.variables = []
+    }
+    current.variables.push(obj)
+  }
+  checkout(type) {
+    if (type == 'child') {
+      let child = {
+        parent: this.current
+      }
+      if (!this.current.children) {
+        this.current.children = [] 
+      }
+      this.current.children.push(child)
+      this.current = child
+    }
+  }
+  start(start) {
+    this.current.start = start
+    console.log(start.type, '开始')
+  }
+  end(end) {
+    this.current.end = end
+    console.log(end.type, '闭合')
+  }
+  middle(middle) {
+    this.current.middle = middle
+  }
+  run() {
+    let child = {}
+    this.tree = {
+      root: {
+        start: true,
+        children: []
+      }
+    }
+    this.tree.root.children.push(child)
+    child.parent = this.tree.root
+    this.current = child
+    return this.search()
+  }
+  search() {
+    let startIndex = 0
+    let root = this.tree.root
+    while(true) {
+      let tagBegin = this.tpl.indexOf('{', startIndex)
+      let tagClose = this.tpl.indexOf('}', startIndex)
+      if (tagBegin == -1) {
+        if (tagClose == -1) {
+          if (root.children[root.children.length - 1].end) {
+            this.current.end = true
+            return this.tree
+          } else {
+            throw new Error('标签未正确闭合')
+          }
+        } else {
+          throw new Error('找不到{')
+        }
+      } else {
+        if (tagClose == -1) {
+          throw new Error('找不到}')
+        } else {
+          let value = this.tpl.substring(tagBegin + 1, tagClose)
+          startIndex = tagClose + 1
+          this.deal({
+            tagBegin,
+            tagClose,
+            value
+          })
+        }
+      }
+    }
+  }
+}
+
+function match(str) {
+  let kw = ['for','elseif','else','if']
+  let logic
+  kw.some(item => {
+    if (str.indexOf(item) != -1) {
+      logic = {
+        type: item
+      }
+      return true
+    }
+  })
+  let res = str.match(/\((.+)\)/)
+  if (logic && res) {
+    logic.value = res[1]
+  }
+  return logic || false
+}
   </script>
 </body>
 </html>
