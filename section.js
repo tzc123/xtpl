@@ -58,7 +58,8 @@ class Section {
   checkout(type) {
     if (type == 'child') {
       let child = {
-        parent: this.current
+        parent: this.current,
+        belong: this
       }
       if (!this.current.children) {
         this.current.children = [] 
@@ -80,12 +81,20 @@ class Section {
   middle(middle) {
     this.current.middle = middle
   }
-  run() {
+  init() {
     let child = {}
     this.tree = {
       root: {
-        start: true,
-        children: []
+        start: {
+          tagBegin: -1,
+          tagClose: -1
+        },
+        end: {
+          tagClose: this.tpl.length - 1,
+          tagBegin: this.tpl.length - 1
+        },
+        children: [],
+        belong: this
       }
     }
     this.tree.root.children.push(child)
@@ -127,7 +136,4 @@ class Section {
   }
 }
 
-module.exports = function view(tpl) {
-  let section = new Section(tpl)
-  return section.run()
-}
+module.exports = Section

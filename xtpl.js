@@ -1,6 +1,6 @@
 const fs = require('fs')
-const view = require('./view')
-const getHtml = require('./getHtml')
+const Section = require('./section')
+const render = require('./getHtml')
 
 function getTpl(path) {
   return new Promise((resolve, reject) => {
@@ -14,11 +14,9 @@ function getTpl(path) {
 
 async function run () {
   let tpl = await getTpl('./index.html')
-  let tree = view(tpl)
-  let html = getHtml(tree, tpl, {
-    test: 'hahaha',
-    list: [1,2,3,4,5]
-  })
+  let section = new Section(tpl)
+  section.init()
+  let html = render(section)
 }
 
 run()
