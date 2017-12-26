@@ -82,24 +82,27 @@ class Section {
     this.current.middle = middle
   }
   init() {
-    let child = {}
     this.tree = {
       root: {
         start: {
           tagBegin: -1,
           tagClose: -1
         },
-        end: {
-          tagClose: this.tpl.length - 1,
-          tagBegin: this.tpl.length - 1
-        },
-        children: [],
-        belong: this
+        // end: {
+        //   tagClose: this.tpl.length - 1,
+        //   tagBegin: this.tpl.length - 1
+        // },
+        end: false,
+        belong: this,
+        content: this.tpl
       }
     }
-    this.tree.root.children.push(child)
-    child.parent = this.tree.root
-    this.current = child
+    // let child = {
+    //   belong: this,
+    //   parent: this.tree.root
+    // }
+    // this.tree.root.children.push(child)
+    this.current = this.tree.root
     return this.search()
   }
   search() {
@@ -110,7 +113,7 @@ class Section {
       let tagClose = this.tpl.indexOf('}', startIndex)
       if (tagBegin == -1) {
         if (tagClose == -1) {
-          if (root.children[root.children.length - 1].end) {
+          if (!root.children ||root.children[root.children.length - 1].end) {
             this.current.end = true
             return this.tree
           } else {

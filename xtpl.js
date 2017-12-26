@@ -1,6 +1,6 @@
 const fs = require('fs')
 const Section = require('./section')
-const render = require('./getHtml')
+const render = require('./render')
 
 function getTpl(path) {
   return new Promise((resolve, reject) => {
