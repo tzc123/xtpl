@@ -1,5 +1,7 @@
+// 关键字
+const kw = ['for','elseif','else','if']
+
 function match(str) {
-  let kw = ['for','elseif','else','if']
   let logic
   kw.some(item => {
     if (str.indexOf(item) != -1) {

@@ -9,20 +9,19 @@
 <body>
 </body>
 <script defer>
-    var section = new xtpl.Section(`  {for(item in list)}
-      <h1>{ item }</h1>
-      {if(show)}
-        <h2>{ haha + item }</h2>
-      {if}
-    {for}
-    {if(true)}
-    111
-    {if}
-    {if(true)}
-    111
-    {if}  {if(true)}
-    111
-    {if}`)
+    var section = new xtpl.Section(
+      `{for(item in list)}
+         <h1>{ item }</h1>
+         {if(show)}
+           <h2>{ haha + '空格' + item.name }</h2>
+         {if}
+         {for(one in item.arr)}
+         {one}
+         {for}
+       {for}
+       {if(true)}
+       111
+       {if}`)
     section.init()
     xtpl.render(section)  
     </script>

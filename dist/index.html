@@ -7,23 +7,39 @@
   <title>Document</title>
 </head>
 <body>
-<script type="text/javascript" src="xtpl4f42d2a6e85e66ee51cb.js"></script></body>
+<script type="text/javascript" src="xtpl.js"></script></body>
 <script defer>
-    var section = new xtpl.Section(`  {for(item in list)}
-      <h1>{ item }</h1>
-      {if(show)}
-        <h2>{ haha + item }</h2>
-      {if}
-    {for}
-    {if(true)}
-    111
-    {if}
-    {if(true)}
-    111
-    {if}  {if(true)}
-    111
-    {if}`)
+    var section = new xtpl.Section(
+      `{for(item in list)}
+         <h1>{ item.name }</h1>
+         {if(show)}
+           <h2>{ haha + '是' + item.name }</h2>
+         {if}
+         {for(one in item.arr)}
+         {one}
+         {for}
+       {for}
+       {if(true)}
+       111
+       {if}`)
     section.init()
-    xtpl.render(section)  
+    let html = xtpl.render(section, {
+      haha: '我',
+      list: [
+        {
+          name: '老大',
+          arr: ['老大的老大','老大的老二','老大的老三']
+        },
+        {
+          name: '老二',
+          arr: ['老二的老大','老二的老二','老二的老三']
+        },
+        {
+          name: '老大',
+          arr: ['老二的老大','老二的老二','老二的老三']
+        }
+      ]
+    }) 
+    console.log(html) 
     </script>
 </html>

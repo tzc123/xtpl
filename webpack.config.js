@@ -5,11 +5,11 @@ const webpack = require('webpack')
 
 module.exports = {
   entry: {
-    xtpl: path.join(__dirname, 'xtpl.js')
+    xtpl: ['babel-polyfill', path.join(__dirname, 'xtpl.js')]
   },
   output: {
     path: path.join(__dirname, 'dist'),
-    filename: '[name][chunkhash].js'
+    filename: '[name].js'
   },
   module: {
     rules: [
@@ -26,9 +26,12 @@ module.exports = {
       }
     ]
   },
+  node: {
+    fs: 'empty'
+  },
   plugins: [
     new CleanPlugin(path.join(__dirname, 'dist')),
-    new webpack.optimize.UglifyJsPlugin(),
+    // new webpack.optimize.UglifyJsPlugin(),
     new HtmlPlugin({
       template: path.join(__dirname, 'index.html'),
       path: path.join(__dirname, 'dist')

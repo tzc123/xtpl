@@ -6,6 +6,7 @@ module.exports = function(section, data) {
     }
   });
   render(section);
+  return section.tree.root.render(data)
 };
 
 function render(section) {
@@ -17,13 +18,18 @@ function render(section) {
       resolve(node);
     } else {
       node.render = function(data) {
+        let content = this.content
+        this.children && this.children.forEach(child => {
+          content = content.replace(child.oldContent, child.render(data))
+        })
         this.variables &&
           this.variables.forEach(variable => {
-            this.content = this.content.replace(
+            content = content.replace(
               "{" + variable.value + "}",
-              eval(getVariable(data, variable.value))
+              eval(getVariable(data, variable.value).value)
             );
           });
+        return content
       };
     }
   });
@@ -34,14 +40,16 @@ function resolve(node) {
     node.start.tagClose + 1,
     node.end.tagBegin
   );
+  node.oldContent = node.belong.tpl.substring(
+    node.start.tagBegin,
+    node.end.tagClose + 1
+  );
   node.render = function(data) {
+    console.log(data)
     let tpl = this.belong.tpl;
     let content = "";
     let variables = this.variables;
     if (this.start.type == "for") {
-      /**
-       * tofix
-       */
       let list = eval(getVariable(data, this.param.list).value);
       if (!list) {
         throw new Error("不存在" + this.param.list);
@@ -49,35 +57,31 @@ function resolve(node) {
       if ({}.toString.call(list) == "[object Array]") {
         content = list.map((item, index) => {
           let ocontent = this.content;
+          this.children && this.children.forEach(child => {
+            ocontent = ocontent.replace(
+              child.oldContent,
+              child.render({
+                ...data,
+                [this.param.item]: list[index]
+              })
+            );
+          });
           variables &&
             variables.forEach(variable => {
               if (variable.value.indexOf(this.param.item) != -1) {
-                /**
-                 * tofix
-                 */
-                let _item_ = getVariable(
+                let res = getVariable(
                   data,
                   variable.value.replace(
                     this.param.item,
                     this.param.list + "[" + index + "]"
                   )
-                ).value;
-                ocontent = ocontent.replace(
-                  "{" + variable.value + "}",
-                  eval(_item_)
                 );
+                let value = eval(res.value);
+                ocontent = ocontent.replace("{" + variable.value + "}", value);
               } else {
-                let res = getVariable(data, variable.value)
-                let value
-                if (res.complete) {
-                  value = eval(res.value)
-                } else {
-                  value = '{' + res.value + '}'
-                }
-                ocontent = ocontent.replace(
-                  "{" + variable.value + "}",
-                  value
-                );
+                let res = getVariable(data, variable.value);
+                let value = eval(res.value);
+                ocontent = ocontent.replace("{" + variable.value + "}", value);
               }
             });
           return ocontent;
@@ -87,6 +91,12 @@ function resolve(node) {
         throw new Error(this.param.list + "不是一个数组");
       }
     } else if (this.start.type == "if") {
+      let children = this.children && this.children.map(child => {
+        return {
+          content: child.render(data),
+          oldContent: child.oldContent
+        }
+      })
       if (this.middle) {
         let choices = [this.start, ...this.middle];
         choices = choices.map((choice, index) => {
@@ -100,68 +110,60 @@ function resolve(node) {
           };
         });
         choices.some(choice => {
+          content = choice.content;
           if (choice.tag.type != "else") {
             if (eval(getVariable(data, choice.tag.value))) {
-              content = choice.content;
+              children && children.forEach(child => {
+                content = content.replace(child.oldContent, child.content)
+              })
               variables &&
                 variables.forEach(variable => {
-                  let res = getVariable(data, variable.value)
-                  let value
-                  if (res.complete) {
-                    value = eval(res.value)
-                  } else {
-                    value = '{' + res.value + '}'
-                  }
+                  let res = getVariable(data, variable.value);
+                  let value = eval(res.value);
                   content = choice.content.replace(
-                    "{" + variable.value + "}", value);
+                    "{" + variable.value + "}",
+                    value
+                  );
                 });
               return true;
             }
           } else {
-            content = choice.content;
+            children && children.forEach(child => {
+              content = content.replace(child.oldContent, child.content)
+            })
             variables &&
               variables.forEach(variable => {
-                let res = getVariable(data, variable.value)
-                let value
-                if (res.complete) {
-                  value = eval(res.value)
-                } else {
-                  value = '{' + res.value + '}'
-                }
+                let res = getVariable(data, variable.value);
+                let value = eval(res.value);
                 content = choice.content.replace(
-                  "{" + variable.value + "}", value);
+                  "{" + variable.value + "}",
+                  value
+                );
               });
             return true;
           }
         });
       } else {
         if (eval(getVariable(data, this.start.value))) {
+          content = this.content
+          children && children.forEach(child => {
+            content = content.replace(child.oldContent, child.content)
+          })
           this.variables &&
             this.variables.forEach(variable => {
-              let res = getVariable(data, variable.value)
-              let value
-              if (res.complete) {
-                value = eval(res.value)
-              } else {
-                value = '{' + res.value + '}'
-              }
-              content = this.content.replace(
-                "{" + variable.value + "}", value);
+              let res = getVariable(data, variable.value);
+              let value = eval(res.value);
+              content = content.replace("{" + variable.value + "}", value);
             });
         }
       }
     }
-    let oldContent = this.belong.tpl.substring(
-      this.start.tagBegin,
-      this.end.tagClose + 1
-    );
-    console.log(content, "content");
-    this.parent.content = this.parent.content.replace(oldContent, content);
+    return content;
   };
 }
 
 function getVariable(data, str) {
-  let complete = true
+  let complete = true;
   let newStr = str.replace(/(?!"')([^\.\[\]\{\}\(\)\s]*)(?!"')/g, function(
     match,
     key
@@ -169,13 +171,13 @@ function getVariable(data, str) {
     if (data[key.trim()]) {
       return "data." + key.trim();
     }
-    complete = false
+    complete = false;
     return key;
   });
   return {
     value: newStr,
     complete
-  }
+  };
 }
 
 function getForParams(value) {
