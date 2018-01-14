@@ -11,11 +11,10 @@
 <script defer>
     var section = new xtpl.Section(
       `{for(item in list)}
-         <h1>{ item.name }</h1>
          {if(show)}
-           <h2>{ haha + '是' + item.name }</h2>
+           <h2>{ haha}</h2>
          {if}
-         {for(one in item.arr)}
+         {for(one in item)}
          {one}
          {for}
        {for}
@@ -25,21 +24,8 @@
     section.init()
     let html = xtpl.render(section, {
       haha: '我',
-      list: [
-        {
-          name: '老大',
-          arr: ['老大的老大','老大的老二','老大的老三']
-        },
-        {
-          name: '老二',
-          arr: ['老二的老大','老二的老二','老二的老三']
-        },
-        {
-          name: '老大',
-          arr: ['老二的老大','老二的老二','老二的老三']
-        }
-      ]
+      list: [['老大的老大','老大的老二','老大的老三'],['老二的老大','老二的老二','老二的老三'],['老二的老大','老二的老二','老二的老三']]
     }) 
-    console.log(html) 
+    console.log(html)   
     </script>
 </html>
